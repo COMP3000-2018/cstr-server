@@ -1,6 +1,10 @@
 from flask import Flask, request
 
-app = Flask(__name__)
+app = None
+
+def create_app(config=None):
+    app = Flask(__name__)
+    return app
 
 @app.route('/api/patient/jim/')
 def get_patient_history():
@@ -11,5 +15,5 @@ def hello_world():
     return "hello world"
 
 if __name__ == '__main__':
+    app = create_app()
     app.run(debug = True)
-
