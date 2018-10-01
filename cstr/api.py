@@ -1,7 +1,9 @@
-from flask import Flask, request, Blueprint, current_app, jsonify, abort, redirect
+from flask import Flask, request, Blueprint, current_app, jsonify, abort, redirect, session
 from fhirclient import client
 import fhirclient.models.patient as patient_model
 import json
+import requests
+import secrets
 from cstr import fhir_config
 
 root_api = Blueprint('root_api', __name__, url_prefix='/api')
@@ -13,6 +15,14 @@ def test():
     """
     return jsonify({"value": "Hello World"})
 
+@root_api.route('/patient/<string:patient_id>', methods=['GET'])
+def receive_token(token: str):
+    if request.method != 'GET':
+        return abort(404)
+    request.args.get('state')
+    if request.args.get('state') != session.pop('state'):
+        return abort(500)
+    request.args.get('code')
 
 # Endpoint: /api/patient/<patient_id>
 @root_api.route('/patient/<string:patient_id>', methods=['GET'])
@@ -25,8 +35,23 @@ def get_patient_history(patient_id: str):
         return abort(404)
     request.args.get('patient_id')
     fhir_client = client.FHIRClient(settings=fhir_config)
+    if request.args.get("launch"):
+        session['state'] = secrets.token_urlsafe(16)
+        requests.get(fhir_client.authorize_url, {
+            "response_type": "code",
+            "client_id": fhir_config['app_id'],
+            "redirect_uri": "",
+            "launch": request.args.get('launch'),
+            "scope": "patient/*.*",
+            "state": session['state'],
+            "aud": fhir_config['api_base']
+        })
+    elif requests.args.get("code"):
+
     if not fhir_client.prepare():
-        return redirect(fhir_client.authorize_url, code=302)
+        if not request.args.get('launch'):
+            return redirect(fhir_client.authorize_url, code=302)
+
     patient = patient_model.Patient.read('', fhir_client.server)
 
 
