@@ -6,5 +6,6 @@ setup(
     packages=['cstr'],
     include_package_data=True,
     zip_safe=False,
-    install_requires=['Flask', 'requests']
+    install_requires=['waitress', 'Flask', 'requests']
 )
+
