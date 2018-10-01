@@ -110,3 +110,6 @@ cstr-venv/
 .mypy_cache/
 .dmypy.json
 dmypy.json
+
+# Intellij
+.idea/
