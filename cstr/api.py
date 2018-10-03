@@ -27,13 +27,14 @@ def receive_token():
     params = {
         "grant_type": "authorization_code",
         "code": request.args.get('code'),
-        "redirect_uri": "cstr.uqcloud.net/api/authorize",
+        "redirect_uri": "http://cstr.uqcloud.net/api/authorize",
         "client_id": "CSTR"
     }
     response = requests.post(url="http://smartonfhir.aehrc.com:8080/oauth/token", data=params)
     session['state'] = None
     session['token'] = response
     return redirect("http://cstr.uqcloud.net")
+
 
 
 @root_api.route('/get_token', methods=['GET'])
@@ -43,14 +44,14 @@ def receive_launch_id():
     params = {
         "response_type": "code",
         "client_id": "CSTR",
-        "redirect_uri": "cstr.uqcloud.net/api/authorize",
+        "redirect_uri": "http://cstr.uqcloud.net/api/authorize",
         "launch": request.args.get('launch'),
         "scope": "patient/*.*+openid+profile",
         "state": session['state'],
         "aud": request.args.get('iss')
     }
     param_string = "&".join([key + "=" + urllib.parse.quote(params[key], safe="") for key in params])
-    ehr_url = urllib.parse.urlunparse(('http', 'smartonfhir.aehrc.com:8080', '/oauth/authorize', None, param_string, '', ''))
+    ehr_url = urllib.parse.urlunparse(('http', 'smartonfhir.aehrc.com:8080', '/oauth/authorize', None, param_string, ''))
     return redirect(ehr_url)
     #return redirect("http://smartonfhir.aehrc.com:8080/oauth/authorize?response_type=code&client_id=CSTR&redirect_uri=cstr.uqcloud.net&launch=" + request.args.get('launch') +
     #    "&scope=patient/*.*&state=" + session['state'] + "&aud=" + request.args.get('iss') )
