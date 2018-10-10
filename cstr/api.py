@@ -66,3 +66,16 @@ def get_patient_history(patient_id):
     test = json.loads(patient_info.text)
     return jsonify(test)
 
+# Endpoint: /api/Observation/<patient_id>
+@root_api.route('/Observation/<string:patient_id>', methods=['GET'])
+def get_patients_observations(patient_id):
+    """Endpoint to get patient info from Smart on FHIR server
+
+    @Return: A json file of the request
+    """
+    if session['token'] is None:
+        abort(401)
+    dict_headers = {"Authorization":"Bearer "+json.loads(session['token'])['access_token']}
+    patient_info = requests.get("http://smartonfhir.aehrc.com:8085/fhir/Observation/" + urllib.parse.quote(patient_id, safe=""),headers=dict_headers)
+    test = json.loads(patient_info.text)
+    return jsonify(test)
