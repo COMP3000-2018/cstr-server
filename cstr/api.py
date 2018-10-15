@@ -93,3 +93,34 @@ def get_patients_observations(patient_id):
     patient_info = requests.get("http://smartonfhir.aehrc.com:8085/fhir/Observation/" + urllib.parse.quote(patient_id, safe=""),headers=dict_headers)
     test = json.loads(patient_info.text)
     return jsonify(test)
+
+# Endpoint: /api/Observation/<patient_id>
+@root_api.route('/Observation/<string:patient_id>', methods=['POST'])
+def get_patients_observations(patient_id):
+    """Endpoint to get and post patient's observation info from Smart on FHIR server
+
+    @Return: A json file of the request
+    """
+    if session['token'] is None:
+        abort(401)
+
+    #dict_headers = {"Authorization":"Bearer "+json.loads(session['token'])['access_token']}
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization':"Bearer "+json.loads(session['token'])['access_token'],
+    }
+    params = {
+        'access_token': access_token,
+    }
+    payload = {
+        'recipient': {
+            'id': user_id,
+        },
+        'message': message_data,
+    }
+    
+    url = 'http://smartonfhir.aehrc.com:8085/fhir/Observation'
+    response = requests.post(url, headers=headers, params=params,
+                             data=json.dumps(payload))
+    response.raise_for_status()
+    return response.json() 
