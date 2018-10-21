@@ -128,3 +128,18 @@ def get_patient_history(patient_id):
 #         patient_info = requests.get("http://smartonfhir.aehrc.com:8085/fhir/Observation/" + urllib.parse.quote(patient_id, safe=""),headers=dict_headers)
 #         test = json.loads(patient_info.text)
 #         return jsonify(test)
+
+# Endpoint: /api/medication/<MEDI7212-medication_name>
+# Example: /api/Medication/MEDI7212-Morphine
+@root_api.route('/Medication/<string:medication_name>', methods=['GET'])
+def get_medication(medication_id):
+    """Endpoint to get patient info from Smart on FHIR server
+
+    @Return: A json file of the request
+    """
+    if session['token'] is None:
+        abort(401)
+    dict_headers_medication = {"Authorization":"Bearer "+json.loads(session['token'])['access_token']}
+    medication_info = requests.get("http://smartonfhir.aehrc.com:8085/fhir/Medication/" + urllib.parse.quote(medication_id, safe=""),headers=dict_headers_medication)
+    test = json.loads(medication_info.text)
+    return jsonify(test)
