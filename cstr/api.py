@@ -1,10 +1,11 @@
-from flask import Flask, request, Blueprint, jsonify, abort, redirect, session
+from flask import Flask, request, Blueprint, jsonify, abort, redirect, session, Response, current_app
 import requests
 import urllib.parse
 import secrets
 import json
 import os
 from cstr import fhir_config
+
 
 root_api = Blueprint('root_api', __name__, url_prefix='/api')
 
@@ -17,6 +18,15 @@ def test():
     """
     return jsonify({"value": "Hello World"})
 
+@root_api.route('/active_login')
+def active_login():
+    """Test whether the current user is logged in.
+    """
+    if 'token' not in session:
+        return Response(json.dumps({"status": "Not Authenticated"}), 401, mimetype="application/json")
+    else:
+        return Response(json.dumps({"status": "Authenticated"}), 200, mimetype="application/json")
+
 @root_api.route('/authorize')
 def receive_token():
     if request.args.get('state') != session.pop('state'):
@@ -24,7 +34,7 @@ def receive_token():
     params = {
         "grant_type": "authorization_code",
         "code": request.args.get('code'),
-        "redirect_uri": "http://cstr.uqcloud.net/api/authorize",
+        "redirect_uri": current_app.config['DOMAIN'] + "/api/authorize",
         "client_id": "CSTR"
     }
     response = requests.post(url="http://smartonfhir.aehrc.com:8080/oauth/token", data=params)
@@ -39,14 +49,14 @@ def standalone_launch():
     params = {
         "response_type": "code",
         "client_id": "CSTR",
-        "redirect_uri": "http://cstr.uqcloud.net/api/authorize",
+        "redirect_uri": current_app.config['DOMAIN'],
         "scope": "system/*.*",
         "state": session['state'],
-        "aud": request.args.get('iss')
+        "aud": "http://smartonfhir.aehrc.com:8085/fhir"
     }
     param_string = "&".join([key + "=" + urllib.parse.quote(params[key], safe="") for key in params])
     ehr_url = urllib.parse.urlunparse(('http', 'smartonfhir.aehrc.com:8080', '/oauth/authorize', None, param_string, ''))
-    return redirect(ehr_url)
+    return Response(json.dumps({"sso_redirect": ehr_url}), status=200, mimetype="application/json")
 
 
 @root_api.route('/ehr_launch', methods=['GET'])
@@ -55,7 +65,7 @@ def ehr_launch():
     params = {
         "response_type": "code",
         "client_id": "CSTR",
-        "redirect_uri": "http://cstr.uqcloud.net/api/authorize",
+        "redirect_uri": current_app.config['DOMAIN'],
         "launch": request.args.get('launch'),
         "scope": "system/*.*",
         "state": session['state'],
@@ -63,7 +73,7 @@ def ehr_launch():
     }
     param_string = "&".join([key + "=" + urllib.parse.quote(params[key], safe="") for key in params])
     ehr_url = urllib.parse.urlunparse(('http', 'smartonfhir.aehrc.com:8080', '/oauth/authorize', None, param_string, ''))
-    return redirect(ehr_url)
+    return Response(json.dumps({"sso_redirect": ehr_url}), status=200, mimetype="application/json")
 
 
 # Endpoint: /api/patient/<patient_id>
@@ -80,47 +90,41 @@ def get_patient_history(patient_id):
     test = json.loads(patient_info.text)
     return jsonify(test)
 
-# Endpoint: /api/Observation/<patient_id>
-@root_api.route('/Observation/<string:patient_id>', methods=['GET'])
-def get_patients_observations(patient_id):
-    """Endpoint to get patient info from Smart on FHIR server
+# # Endpoint: /api/Observation/<patient_id>
+# @root_api.route('/Observation/<string:patient_id>', methods=['GET', 'POST'])
+# def get_patients_observations(patient_id):
+#     if request.method == 'POST':
+#         """Endpoint to get and post patient's observation info from Smart on FHIR server
 
-    @Return: A json file of the request
-    """
-    if session['token'] is None:
-        abort(401)
-    dict_headers = {"Authorization":"Bearer "+json.loads(session['token'])['access_token']}
-    patient_info = requests.get("http://smartonfhir.aehrc.com:8085/fhir/Observation/" + urllib.parse.quote(patient_id, safe=""),headers=dict_headers)
-    test = json.loads(patient_info.text)
-    return jsonify(test)
+#         @Return: A json file of the request
+#         """
+#         if session['token'] is None:
+#             abort(401)
 
-# Endpoint: /api/Observation/<patient_id>
-@root_api.route('/Observation/<string:patient_id>', methods=['POST'])
-def get_patients_observations(patient_id):
-    """Endpoint to get and post patient's observation info from Smart on FHIR server
-
-    @Return: A json file of the request
-    """
-    if session['token'] is None:
-        abort(401)
-
-    #dict_headers = {"Authorization":"Bearer "+json.loads(session['token'])['access_token']}
-    headers = {
-        'Content-Type': 'application/json',
-        'Authorization':"Bearer "+json.loads(session['token'])['access_token'],
-    }
-    params = {
-        'access_token': access_token,
-    }
-    payload = {
-        'recipient': {
-            'id': user_id,
-        },
-        'message': message_data,
-    }
-    
-    url = 'http://smartonfhir.aehrc.com:8085/fhir/Observation'
-    response = requests.post(url, headers=headers, params=params,
-                             data=json.dumps(payload))
-    response.raise_for_status()
-    return response.json() 
+#         #dict_headers = {"Authorization":"Bearer "+json.loads(session['token'])['access_token']}
+#         headers = {
+#             'Content-Type': 'application/json',
+#             'Authorization':"Bearer "+json.loads(session['token'])['access_token'],
+#         }
+#         params = {
+#             'access_token': access_token,
+#         }
+#         payload = {
+#             'recipient': {
+#                 'id': user_id,
+#             },
+#             'message': message_data,
+#         }
+        
+#         url = 'http://smartonfhir.aehrc.com:8085/fhir/Observation'
+#         response = requests.post(url, headers=headers, params=params,
+#                                 data=json.dumps(payload))
+#         response.raise_for_status()
+#         return response.json()
+#     elif request.method == '':
+#         if session['token'] is None:
+#             abort(401)
+#         dict_headers = {"Authorization":"Bearer "+json.loads(session['token'])['access_token']}
+#         patient_info = requests.get("http://smartonfhir.aehrc.com:8085/fhir/Observation/" + urllib.parse.quote(patient_id, safe=""),headers=dict_headers)
+#         test = json.loads(patient_info.text)
+#         return jsonify(test)
