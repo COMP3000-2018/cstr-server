@@ -133,7 +133,7 @@ def get_patient_history(patient_id):
 # Example: /api/Medication/MEDI7212-Morphine
 @root_api.route('/Medication/<string:medication_name>', methods=['GET'])
 def get_medication(medication_id):
-    """Endpoint to get patient info from Smart on FHIR server
+    """Endpoint to get medication info from Smart on FHIR server
 
     @Return: A json file of the request
     """
