@@ -36,7 +36,7 @@ def receive_token():
     params = {
         "grant_type": "authorization_code",
         "code": request.args.get('code'),
-        "redirect_uri": current_app.config['DOMAIN'] + "/api/authorize",
+        "redirect_uri": current_app.config['DOMAIN'],
         "client_id": "CSTR"
     }
     response = requests.post(url="http://smartonfhir.aehrc.com:8080/oauth/token", data=params)
