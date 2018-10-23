@@ -31,8 +31,8 @@ def active_login():
 def receive_token():
     if 'state' not in session or not request.args.get('code'):
         return abort(400)
-    if request.args.get('state') != session.pop('state'):
-        return abort(500)
+    #if request.args.get('state') != session.pop('state'):
+    #    return abort(500)
     params = {
         "grant_type": "authorization_code",
         "code": request.args.get('code'),
