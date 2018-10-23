@@ -79,8 +79,27 @@ def ehr_launch():
     return Response(json.dumps({"sso_redirect": ehr_url}), status=200, mimetype="application/json")
 
 
+@root_api.route("/patient", methods=['POST'])
+def create_patient():
+    """
+
+    """
+    body = request.get_json(silent=True)
+    if not request.args.get("token") or body is None:
+        abort(400)
+
+    dict_headers = {
+        "Authorization":"Bearer "+ request.args.get('token'),
+        "Content-Type": "application/fhir+json"
+    }
+    server_response = requests.post("http://smartonfhir.aehrc.com:8085/fhir/Patient/", request.get_data(as_text=True),
+                                    headers=dict_headers)
+    server_parse = json.loads(server_response.text)
+    return jsonify(server_parse)
+
+
 # Endpoint: /api/patient/<patient_id>
-@root_api.route('/Patient/<string:patient_id>', methods=['GET'])
+@root_api.route('/patient/<string:patient_id>', methods=['GET'])
 def get_patient_history(patient_id):
     """Endpoint to get patient info from Smart on FHIR server
 
@@ -89,7 +108,8 @@ def get_patient_history(patient_id):
     if session['token'] is None:
         abort(401)
     dict_headers = {"Authorization":"Bearer "+json.loads(session['token'])['access_token']}
-    patient_info = requests.get("http://smartonfhir.aehrc.com:8085/fhir/Patient/" + urllib.parse.quote(patient_id, safe=""),headers=dict_headers)
+    patient_info = requests.get("http://smartonfhir.aehrc.com:8085/fhir/Patient/" +
+                                urllib.parse.quote(patient_id, safe=""), headers=dict_headers)
     test = json.loads(patient_info.text)
     return jsonify(test)
 
@@ -142,7 +162,8 @@ def get_observations(patient_id):
     if session['token'] is None:
         abort(401)
     dict_headers_observation = {"Authorization":"Bearer "+json.loads(session['token'])['access_token']}
-    patient_observation_info = requests.get("http://smartonfhir.aehrc.com:8085/fhir/Observation/" + urllib.parse.quote(patient_id, safe=""),headers= dict_headers_observation)
+    patient_observation_info = requests.get("http://smartonfhir.aehrc.com:8085/fhir/Observation/" +
+                                            urllib.parse.quote(patient_id, safe=""), headers=dict_headers_observation)
     request_result_observation = json.loads(patient_observation_info.text)
     return jsonify(request_result_observation)
 
