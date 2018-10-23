@@ -10,7 +10,6 @@ from cstr import fhir_config
 root_api = Blueprint('root_api', __name__, url_prefix='/api')
 
 
-
 # Endpoint: /api/test
 @root_api.route('/test')
 def test():
@@ -27,8 +26,11 @@ def active_login():
     else:
         return Response(json.dumps({"status": "Authenticated"}), 200, mimetype="application/json")
 
-@root_api.route('/authorize')
+
+@root_api.route('/retrieve_token')
 def receive_token():
+    if 'state' not in session or not request.args.get('code'):
+        return abort(400)
     if request.args.get('state') != session.pop('state'):
         return abort(500)
     params = {
@@ -39,8 +41,7 @@ def receive_token():
     }
     response = requests.post(url="http://smartonfhir.aehrc.com:8080/oauth/token", data=params)
     session['state'] = None
-    session['token'] = response.text
-    return jsonify({"message": "Auth token associated to user"})
+    return Response(response.text, status=200, mimetype="application/json")
 
 
 @root_api.route('/standalone_launch', methods=['GET'])
@@ -61,6 +62,8 @@ def standalone_launch():
 
 @root_api.route('/ehr_launch', methods=['GET'])
 def ehr_launch():
+    if not request.args.get('launch') or not request.args.get('iss'):
+        abort(400)
     session['state'] = secrets.token_urlsafe(16)
     params = {
         "response_type": "code",
@@ -90,7 +93,7 @@ def get_patient_history(patient_id):
     test = json.loads(patient_info.text)
     return jsonify(test)
 
-# # Endpoint: /api/Observation/<patient_id>
+# Endpoint: /api/Observation/<patient_id>
 # @root_api.route('/Observation/<string:patient_id>', methods=['GET', 'POST'])
 # def get_patients_observations(patient_id):
 #     if request.method == 'POST':
@@ -142,6 +145,7 @@ def get_observations(patient_id):
     patient_observation_info = requests.get("http://smartonfhir.aehrc.com:8085/fhir/Observation/" + urllib.parse.quote(patient_id, safe=""),headers= dict_headers_observation)
     request_result_observation = json.loads(patient_observation_info.text)
     return jsonify(request_result_observation)
+
 
 # Endpoint: /api/medication/<MEDI7212-medication_name>
 # Example: /api/Medication/MEDI7212-Morphine
