@@ -29,7 +29,7 @@ def active_login():
 
 @root_api.route('/retrieve_token')
 def receive_token():
-    if not request.args.get('code'):
+    if request.args.get('code') is None:
         return abort(400)
     #if request.args.get('state') != session.pop('state'):
     #    return abort(500)
