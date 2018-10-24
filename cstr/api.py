@@ -109,9 +109,9 @@ def get_patient_history(patient_id):
 
     @Return: A json file of the request
     """
-    if session['token'] is None:
-        abort(401)
-    dict_headers = {"Authorization":"Bearer "+json.loads(session['token'])['access_token']}
+    if not request.args.get("token"):
+        abort(400)
+    dict_headers = {"Authorization":"Bearer " + request.args.get("token")}
     patient_info = requests.get("http://smartonfhir.aehrc.com:8085/fhir/Patient/" +
                                 urllib.parse.quote(patient_id, safe=""), headers=dict_headers)
     test = json.loads(patient_info.text)
