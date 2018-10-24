@@ -81,18 +81,22 @@ def ehr_launch():
 
 @root_api.route("/patient", methods=['POST'])
 def create_patient():
-    """
+    """Create a patient on the fhir server using what the client sent.
 
     """
-    body = request.get_json(silent=True)
-    if not request.args.get("token") or body is None:
+    body = None
+    try:
+        body = json.loads(request.get_data(as_text=True))
+    except json.JSONDecodeError:
         abort(400)
-
+    fhir_data = json.dumps(body["patient"])
+    if not request.args.get("token"):
+        abort(400)
     dict_headers = {
         "Authorization":"Bearer "+ request.args.get('token'),
-        "Content-Type": "application/fhir+json"
+        "Content-Type": "application/json"
     }
-    server_response = requests.post("http://smartonfhir.aehrc.com:8085/fhir/Patient/", request.get_data(as_text=True),
+    server_response = requests.post("http://smartonfhir.aehrc.com:8085/fhir", data=fhir_data,
                                     headers=dict_headers)
     server_parse = json.loads(server_response.text)
     return jsonify(server_parse)
