@@ -9,7 +9,6 @@ from cstr import fhir_config
 
 root_api = Blueprint('root_api', __name__, url_prefix='/api')
 
-
 # Endpoint: /api/test
 @root_api.route('/test')
 def test():
@@ -117,55 +116,17 @@ def get_patient_history(patient_id):
     test = json.loads(patient_info.text)
     return jsonify(test)
 
-# Endpoint: /api/Observation/<patient_id>
-# @root_api.route('/Observation/<string:patient_id>', methods=['GET', 'POST'])
-# def get_patients_observations(patient_id):
-#     if request.method == 'POST':
-#         """Endpoint to get and post patient's observation info from Smart on FHIR server
-
-#         @Return: A json file of the request
-#         """
-#         if session['token'] is None:
-#             abort(401)
-
-#         #dict_headers = {"Authorization":"Bearer "+json.loads(session['token'])['access_token']}
-#         headers = {
-#             'Content-Type': 'application/json',
-#             'Authorization':"Bearer "+json.loads(session['token'])['access_token'],
-#         }
-#         params = {
-#             'access_token': access_token,
-#         }
-#         payload = {
-#             'recipient': {
-#                 'id': user_id,
-#             },
-#             'message': message_data,
-#         }
-        
-#         url = 'http://smartonfhir.aehrc.com:8085/fhir/Observation'
-#         response = requests.post(url, headers=headers, params=params,
-#                                 data=json.dumps(payload))
-#         response.raise_for_status()
-#         return response.json()
-#     elif request.method == '':
-#         if session['token'] is None:
-#             abort(401)
-#         dict_headers = {"Authorization":"Bearer "+json.loads(session['token'])['access_token']}
-#         patient_info = requests.get("http://smartonfhir.aehrc.com:8085/fhir/Observation/" + urllib.parse.quote(patient_id, safe=""),headers=dict_headers)
-#         test = json.loads(patient_info.text)
-#         return jsonify(test)
 
 # Endpoint: /api/Observation/<patient_id>
-@root_api.route('/Observation/<string:patient_id>', methods=['GET'])
+@root_api.route('/observation/<string:patient_id>', methods=['GET'])
 def get_observations(patient_id):
     """Endpoint to get Observations of patients from Smart on FHIR server
 
     @Return: A json file of the request
     """
-    if session['token'] is None:
-        abort(401)
-    dict_headers_observation = {"Authorization":"Bearer "+json.loads(session['token'])['access_token']}
+    if not request.args.get("token"):
+        abort(400)
+    dict_headers_observation = {"Authorization":"Bearer " + request.args.get("token")}
     patient_observation_info = requests.get("http://smartonfhir.aehrc.com:8085/fhir/Observation/" +
                                             urllib.parse.quote(patient_id, safe=""), headers=dict_headers_observation)
     request_result_observation = json.loads(patient_observation_info.text)
@@ -174,15 +135,15 @@ def get_observations(patient_id):
 
 # Endpoint: /api/medication/<MEDI7212-medication_name>
 # Example: /api/Medication/MEDI7212-Morphine
-@root_api.route('/Medication/<string:medication_name>', methods=['GET'])
+@root_api.route('/medication/<string:medication_name>', methods=['GET'])
 def get_medication(medication_id):
     """Endpoint to get medication info from Smart on FHIR server
 
     @Return: A json file of the request
     """
-    if session['token'] is None:
-        abort(401)
-    dict_headers_medication = {"Authorization":"Bearer "+json.loads(session['token'])['access_token']}
+    if not request.args.get("token"):
+        abort(400)
+    dict_headers_medication = {"Authorization":"Bearer " + request.args.get("token")}
     medication_info = requests.get("http://smartonfhir.aehrc.com:8085/fhir/Medication/" + urllib.parse.quote(medication_id, safe=""),headers=dict_headers_medication)
     test = json.loads(medication_info.text)
     return jsonify(test)
