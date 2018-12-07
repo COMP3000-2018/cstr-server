@@ -2,3 +2,4 @@ The following people have contributed to this project, each agreeing to release 
 
 * gregarious96 
 * dcheu
+* joshuaobrien
